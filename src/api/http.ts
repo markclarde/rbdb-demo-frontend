@@ -21,17 +21,14 @@ async function request<T>(
     credentials: "include",
   });
 
-  if (res.status === 401) {
-    window.location.href = "/login";
-    throw { status: 401, message: "Unauthorized" } satisfies HttpError;
-  }
-
   if (!res.ok) {
     let message = res.statusText;
+
     try {
       const data = (await res.json()) as any;
       message = data?.message || data?.error || message;
     } catch {}
+
     throw { status: res.status, message } satisfies HttpError;
   }
 

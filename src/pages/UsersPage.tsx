@@ -138,8 +138,8 @@ export function UsersPage() {
           </div>
 
           {/* Table */}
-          <div className="mt-5 overflow-hidden rounded-md border">
-            <Table>
+          <div className="mt-5 overflow-hidden rounded-md border">  
+            <Table className="table-fixed w-full">
               <TableHeader className="bg-[hsl(var(--table-head))]">
                 <TableRow>
                   <TableHead className="w-[40px]">
@@ -159,16 +159,14 @@ export function UsersPage() {
                     />
                   </TableHead>
 
-                  <TableHead>ID</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="w-[80px] text-right">
-                    Actions
-                  </TableHead>
+                  <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead className="w-[150px]">Username</TableHead>
+                  <TableHead className="w-[220px]">Email</TableHead>
+                  <TableHead className="w-[150px]">Role</TableHead>
+                  <TableHead className="w-[150px]">Branch</TableHead>
+                  <TableHead className="w-[120px]">Status</TableHead>
+                  <TableHead className="w-[120px]">Created</TableHead>
+                  <TableHead className="w-[80px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -205,7 +203,7 @@ export function UsersPage() {
                       </Badge>
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className="truncate">
                       {user.branch ? user.branch.name : "-"}
                     </TableCell>
 
