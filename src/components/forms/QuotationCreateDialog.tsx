@@ -15,7 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useRbac } from "@/hooks/useRbac";
+import { useAuth } from "@/hooks/useAuth";
+// import { quotationsApi } from "@/api/quotations"; // Uncomment when ready
 
 const schema = z.object({
   clientName: z.string().min(1, "Client name is required"),
@@ -31,20 +32,23 @@ export function QuotationCreateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const rbac = useRbac();
+  const { can } = useAuth();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { clientName: "", amount: 0 },
   });
 
-  const canCreate = rbac.can("create_quotations");
+  const canCreate = can("QUOTATION_CREATE");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>Create quotation</DialogTitle>
-          <DialogDescription>Create a new quotation (demo form).</DialogDescription>
+          <DialogDescription>
+            Create a new quotation.
+          </DialogDescription>
         </DialogHeader>
 
         {!canCreate ? (
@@ -55,31 +59,36 @@ export function QuotationCreateDialog({
           <form
             className="space-y-4"
             onSubmit={form.handleSubmit(async (values) => {
-              toast.success(`Quotation created for ${values.clientName}`);
-              onOpenChange(false);
-              form.reset();
+              try {
+                // Replace this with real API call when ready:
+                // await quotationsApi.create(values);
+
+                toast.success(`Quotation created for ${values.clientName}`);
+                onOpenChange(false);
+                form.reset();
+              } catch (err: any) {
+                toast.error(
+                  err?.response?.data?.message || "Failed to create quotation"
+                );
+              }
             })}
           >
             <div className="space-y-2">
-              <Label htmlFor="clientName" className="text-xs uppercase tracking-wider">
-                Client name
-              </Label>
+              <Label htmlFor="clientName">Client name</Label>
               <Input
                 id="clientName"
                 {...form.register("clientName")}
                 placeholder="Acme Corp"
               />
-              {form.formState.errors.clientName ? (
+              {form.formState.errors.clientName && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.clientName.message}
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-xs uppercase tracking-wider">
-                Amount
-              </Label>
+              <Label htmlFor="amount">Amount</Label>
               <Input
                 id="amount"
                 type="number"
@@ -87,27 +96,26 @@ export function QuotationCreateDialog({
                 {...form.register("amount")}
                 placeholder="12500"
               />
-              {form.formState.errors.amount ? (
+              {form.formState.errors.amount && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.amount.message}
                 </p>
-              ) : null}
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Creating…" : "Create quotation"}
+                {form.formState.isSubmitting
+                  ? "Creating…"
+                  : "Create quotation"}
               </Button>
-            </div>
-
-            <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-              <div className="font-medium text-foreground">Backend TODO</div>
-              <div className="mt-1">
-                Wire this to <span className="font-mono">POST /api/quotations</span>.
-              </div>
             </div>
           </form>
         )}

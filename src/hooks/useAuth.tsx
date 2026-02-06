@@ -2,7 +2,16 @@ import * as React from "react";
 import { login as loginRequest } from "@/api/auth";
 import { http } from "@/api/http";
 
+type User = {
+  id: number;
+  username: string;
+  role: string;
+  permissions: string[];
+  branch_id: number;
+};
+
 type AuthContextValue = {
+  user: User | null;
   isAuthenticated: boolean;
   login: (
     email: string,
@@ -10,12 +19,28 @@ type AuthContextValue = {
     branchId: number
   ) => Promise<void>;
   logout: () => Promise<void>;
+  can: (permission: string) => boolean;
 };
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+
+  const isAuthenticated = !!user;
+
+  const fetchMe = React.useCallback(async () => {
+    try {
+      const user = await http.get<User>("/auth/me");
+      setUser(user);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
 
   const login = React.useCallback(
     async (email: string, password: string, branchId: number) => {
@@ -25,18 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         branch_id: branchId,
       });
 
-      setIsAuthenticated(true);
+      await fetchMe();
     },
-    []
+    [fetchMe]
   );
 
   const logout = React.useCallback(async () => {
     await http.post("/auth/logout");
-    setIsAuthenticated(false);
+    setUser(null);
   }, []);
 
+  const can = React.useCallback(
+    (permission: string) => {
+      if (!user) return false;
+      return user.permissions.includes(permission);
+    },
+    [user]
+  );
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, login, logout, can }}
+    >
       {children}
     </AuthContext.Provider>
   );

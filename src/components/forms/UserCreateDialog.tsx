@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useRbac, DEMO_ROLE_OPTIONS } from "@/hooks/useRbac";
+import { useAuth } from "@/hooks/useAuth";
 import { usersApi } from "@/api/users";
 import { CreateUserPayload } from "@/types/user";
 
@@ -38,7 +38,8 @@ export function UserCreateDialog({
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }) {
-  const rbac = useRbac();
+  const { can } = useAuth();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -50,7 +51,7 @@ export function UserCreateDialog({
     },
   });
 
-  const canCreate = rbac.can("create_users");
+  const canCreate = can("CREATE_USER");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,7 +59,7 @@ export function UserCreateDialog({
         <DialogHeader>
           <DialogTitle>Create user</DialogTitle>
           <DialogDescription>
-            Add a new user to your organization (demo form).
+            Add a new user to your organization.
           </DialogDescription>
         </DialogHeader>
 
@@ -76,8 +77,9 @@ export function UserCreateDialog({
 
                 onOpenChange(false);
                 form.reset();
+                onSuccess();
               } catch (err: any) {
-                toast.error(err.message || "Failed to create user");
+                toast.error(err?.response?.data?.message || "Failed to create user");
               }
             })}
           >
@@ -93,44 +95,39 @@ export function UserCreateDialog({
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...form.register("email")}
-              />
+              <Input id="email" type="email" {...form.register("email")} />
+              {form.formState.errors.email && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                {...form.register("password")}
-              />
+              <Input id="password" type="password" {...form.register("password")} />
+              {form.formState.errors.password && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.password.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role" className="text-xs uppercase tracking-wider">
-                Role
-              </Label>
-              <div className="relative">
-                <select
-                  aria-label="Role"
-                  id="role_id"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={form.watch("role_id")}
-                  onChange={(e) =>
-                    form.setValue("role_id", Number(e.target.value))
-                  }
-                >
-                  <option value={1}>Super Admin</option>
-                  <option value={2}>Admin</option>
-                  <option value={3}>Sales Representative</option>
-                </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                  ▾
-                </span>
-              </div>
+              <Label htmlFor="role_id">Role</Label>
+              <select
+                aria-label="Role_id"
+                id="role_id"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={form.watch("role_id")}
+                onChange={(e) =>
+                  form.setValue("role_id", Number(e.target.value))
+                }
+              >
+                <option value={1}>Super Admin</option>
+                <option value={2}>Admin</option>
+                <option value={3}>Sales Representative</option>
+              </select>
             </div>
 
             <div className="space-y-2">
@@ -150,17 +147,16 @@ export function UserCreateDialog({
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Creating…" : "Create user"}
               </Button>
-            </div>
-
-            <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-              <div className="font-medium text-foreground">Backend TODO</div>
-              <div className="mt-1">Wire this to <span className="font-mono">POST /api/users</span>.</div>
             </div>
           </form>
         )}

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useRbac } from "@/hooks/useRbac";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -31,45 +31,45 @@ type NavItem = {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  canView?: boolean;
+  permission?: string;
 };
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const rbac = useRbac();
+  const { user, can, logout } = useAuth();
 
   const nav: NavItem[] = [
     {
       to: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
-      canView: rbac.can("view_dashboard"),
     },
     {
       to: "/quotations",
       label: "Quotations",
       icon: FileText,
-      canView: rbac.can("view_quotations"),
+      permission: "QUOTATION_READ",
     },
     {
       to: "/users",
       label: "Users",
       icon: Users,
-      canView: rbac.can("view_users"),
+      permission: "USER_READ",
     },
     {
       to: "/reports",
       label: "Reports",
       icon: Shield,
-      canView: rbac.can("view_reports"),
+      permission: "SYSTEM_LOG_READ",
     },
     {
       to: "/admin/roles",
       label: "Roles & Permissions",
       icon: Settings,
-      canView: rbac.can("manage_roles_permissions"),
+      permission: "ROLE_READ",
     },
-  ].filter((i) => i.canView !== false);
+  ].filter((item) => !item.permission || can(item.permission));
+
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -79,8 +79,12 @@ export function AppSidebar() {
             <span className="font-semibold tracking-tight">E</span>
           </div>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <div className="truncate text-sm font-semibold tracking-tight">Enterprise Ops</div>
-            <div className="truncate text-[11px] text-muted-foreground">{rbac.roleLabel}</div>
+            <div className="truncate text-sm font-semibold tracking-tight">
+              Enterprise Ops
+            </div>
+            <div className="truncate text-[11px] text-muted-foreground">
+              {user?.role ?? ""}
+            </div>
           </div>
         </div>
       </SidebarHeader>
@@ -117,18 +121,18 @@ export function AppSidebar() {
         <Separator className="my-2" />
         <div className="flex items-center justify-between gap-2 px-2 py-1.5">
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <div className="truncate text-sm font-medium leading-none">Operations</div>
-            <div className="truncate text-xs text-muted-foreground">{rbac.roleLabel}</div>
+            <div className="truncate text-sm font-medium leading-none">
+              Operations
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {user?.role ?? ""}
+            </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={async () => {
-              await fetch("http://localhost:3001/auth/logout", {
-                method: "POST",
-                credentials: "include",
-              });
-
+              await logout();
               navigate("/login", { replace: true });
             }}
             aria-label="Logout"
